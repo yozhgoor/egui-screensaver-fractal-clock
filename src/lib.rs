@@ -6,8 +6,8 @@
 //! hands and the hour hand.  The result is a continuously-morphing fractal
 //! tree whose shape encodes the current time.
 //!
-//! Rendering only happens while the window is focused, so no CPU is consumed
-//! when the tab is in the background.
+//! Rendering is capped at 30 FPS. If the hardware cannot sustain that rate,
+//! frames are painted as fast as possible without any artificial delay.
 //!
 //! # Usage
 //!
@@ -77,14 +77,9 @@ impl FractalClockBackground {
     /// Call this once per frame **before** drawing any UI panels or windows so
     /// the animation appears behind all other content.
     ///
-    /// Returns immediately without painting if the window does not have focus,
-    /// saving CPU when the tab is backgrounded.
+    /// Repaints are capped at 30 FPS; if the hardware cannot sustain that rate
+    /// the clock animates as fast as possible without any artificial delay.
     pub fn paint(&mut self, ctx: &Context) {
-        // Skip rendering entirely when the window is not focused.
-        if !ctx.input(|input| input.focused) {
-            return;
-        }
-
         // A single clock hand: its length, angle (radians from 12 o'clock),
         // and the corresponding direction vector.
         struct Hand {
@@ -109,8 +104,9 @@ impl FractalClockBackground {
         // o'clock points straight up (negative Y in screen space).
         let time = ctx.input(|input| input.time);
 
-        // Request a repaint every frame for continuous animation.
-        ctx.request_repaint();
+        // Request a repaint after ~33 ms to cap animation at 30 FPS.
+        // If the frame takes longer than that, egui repaints immediately.
+        ctx.request_repaint_after(std::time::Duration::from_secs_f64(1.0 / 30.0));
 
         let angle_from_period =
             |period| TAU * (time.rem_euclid(period) / period) as f32 - TAU / 4.0;
