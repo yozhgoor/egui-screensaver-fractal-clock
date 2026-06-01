@@ -40,6 +40,12 @@ jobs:
       - name: Build WASM dist
         run: cargo run --example webapp -- dist --release
 
+      - name: Inject wasm hash into sw.js
+        run: |
+          HASH=$(sha256sum target/release/dist/app_bg.wasm | cut -c1-16)
+          sed -i "s|__CACHE_VERSION__|$HASH|" target/release/dist/sw.js
+          grep -q '__CACHE_VERSION__' target/release/dist/sw.js && { echo "ERROR: __CACHE_VERSION__ placeholder was not replaced in sw.js"; exit 1; } || true
+
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

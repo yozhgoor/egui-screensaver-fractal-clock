@@ -1,24 +1,28 @@
+#[cfg(target_arch = "wasm32")]
+use egui_screensaver_fractal_clock::FractalClockBackground;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::JsCast;
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Default)]
+struct DemoApp {
+    screensaver: FractalClockBackground,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl eframe::App for DemoApp {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx().clone();
+        // Fill the background black before painting the screensaver.
+        let painter = ctx.layer_painter(egui::LayerId::background());
+        painter.rect_filled(ctx.viewport_rect(), 0.0, egui::Color32::BLACK);
+
+        self.screensaver.paint(&ctx);
+    }
+}
+
 #[xtask_wasm::run_example]
 fn run_app() {
-    use egui_screensaver_fractal_clock::FractalClockBackground;
-    use wasm_bindgen::JsCast;
-
-    #[derive(Default)]
-    struct DemoApp {
-        screensaver: FractalClockBackground,
-    }
-
-    impl eframe::App for DemoApp {
-        fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-            let ctx = ui.ctx().clone();
-            // Fill the background black before painting the screensaver.
-            let painter = ctx.layer_painter(egui::LayerId::background());
-            painter.rect_filled(ctx.viewport_rect(), 0.0, egui::Color32::BLACK);
-
-            self.screensaver.paint(&ctx);
-        }
-    }
-
     let web_options = eframe::WebOptions::default();
 
     wasm_bindgen_futures::spawn_local(async {
